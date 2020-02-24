@@ -1,4 +1,4 @@
-Description: "(SO0018) - WorkSpaces Cost Optimizer: A solution for automatically optimizing the cost of Amazon Workspaces version %VERSION%"
+Description: "(SO0018) - WorkSpaces Cost Optimizer: A solution for automatically optimizing the cost of Amazon Workspaces version v2.2"
 Parameters:
   VpcCIDR:
     Type: String
@@ -135,7 +135,7 @@ Mappings:
       TaskDefinitionName: "wco-task"
       LogGroupName: "/ecs/wco-task"
       ID: "SO0018"
-      Version: "%VERSION%" 
+      Version: "v2.2"
       SendAnonymousUsageData: True
 
 Resources:
@@ -168,7 +168,7 @@ Resources:
           - logs:CreateLogGroup
           - logs:CreateLogStream
           - logs:PutLogEvents
-          Resource: !Join ["", ["arn:aws:logs:", Ref: "AWS::Region", ":", Ref: "AWS::AccountId", ":log-group:/ecs/wco-task/*"]]
+          Resource: !Join ["", ["arn:aws-cn:logs:", Ref: "AWS::Region", ":", Ref: "AWS::AccountId", ":log-group:/ecs/wco-task/*"]]
         - Effect: Allow
           Action:
           - ecr:BatchCheckLayerAvailability
@@ -184,16 +184,16 @@ Resources:
           - workspaces:DescribeWorkspaceBundles
           - workspaces:ModifyWorkspaceProperties
           Resource:
-            - !Sub "arn:aws:workspaces:*:${AWS::AccountId}:directory/*"
-            - !Sub "arn:aws:workspaces:*:${AWS::AccountId}:workspace/*"
-            - !Sub "arn:aws:workspaces:*:${AWS::AccountId}:workspacebundle/*"
+            - !Sub "arn:aws-cn:workspaces:*:${AWS::AccountId}:directory/*"
+            - !Sub "arn:aws-cn:workspaces:*:${AWS::AccountId}:workspace/*"
+            - !Sub "arn:aws-cn:workspaces:*:${AWS::AccountId}:workspacebundle/*"
         - Effect: Allow
           Action:
           - s3:PutObject
           Resource:
             !Join
             - ''
-            - - 'arn:aws:s3:::'
+            - - 'arn:aws-cn:s3:::'
               - !Ref CostOptimizerBucket
               - /*
         - Effect: Allow
@@ -235,11 +235,11 @@ Resources:
           - logs:CreateLogGroup
           - logs:CreateLogStream
           - logs:PutLogEvents
-          Resource: !Join ["", ["arn:aws:logs:", Ref: "AWS::Region", ":", Ref: "AWS::AccountId", ":log-group:/aws/lambda/*"]]
+          Resource: !Join ["", ["arn:aws-cn:logs:", Ref: "AWS::Region", ":", Ref: "AWS::AccountId", ":log-group:/aws/lambda/*"]]
         - Effect: Allow
           Action:
           - ecs:RunTask
-          Resource: !Join [":", [ "arn:aws:ecs", !Ref "AWS::Region", !Ref "AWS::AccountId", "task-definition/wco-task" ] ]
+          Resource: !Join [":", [ "arn:aws-cn:ecs", !Ref "AWS::Region", !Ref "AWS::AccountId", "task-definition/wco-task" ] ]
         - Effect: Allow
           Action:
           - iam:PassRole
@@ -429,7 +429,7 @@ Resources:
       TaskRoleArn: !GetAtt CostOptimizerAdminRole.Arn
       ContainerDefinitions:
         - Name: "wco2-container"
-          Image: "898061675696.dkr.ecr.us-east-1.amazonaws.com/wco:2.2"
+          Image: "221636723408.dkr.ecr.cn-northwest-1.amazonaws.com.cn/wco:cn"
           Essential: True
           Cpu: 256
 
@@ -489,9 +489,9 @@ Resources:
       Code:
         S3Bucket: !Join
           - '-'
-          - - "%DIST_BUCKET_NAME%"
+          - - "paulsolutions"
             - !Ref "AWS::Region"
-        S3Key: "%SOLUTION_NAME%/%VERSION%/workspaces-cost-optimizer.zip"
+        S3Key: "workspaces-cost-optimizer/v2.2/workspaces-cost-optimizer.zip"
       Handler: helpers/create-task.lambda_handler
       Runtime: python3.8
       Timeout: 300
@@ -524,9 +524,9 @@ Resources:
       Code:
         S3Bucket: !Join
           - '-'
-          - - "%DIST_BUCKET_NAME%"
+          - - "paulsolutions"
             - !Ref "AWS::Region"
-        S3Key: "%SOLUTION_NAME%/%VERSION%/workspaces-cost-optimizer.zip"
+        S3Key: "workspaces-cost-optimizer/v2.2/workspaces-cost-optimizer.zip"
       Handler: helpers/uuid-helper.lambda_handler
       Runtime: python3.8
       Timeout: 300
@@ -555,21 +555,21 @@ Resources:
           - logs:CreateLogGroup
           - logs:CreateLogStream
           - logs:PutLogEvents
-          Resource: !Join ["", ["arn:aws:logs:", Ref: "AWS::Region", ":", Ref: "AWS::AccountId", ":log-group:/aws/lambda/*"]]
+          Resource: !Join ["", ["arn:aws-cn:logs:", Ref: "AWS::Region", ":", Ref: "AWS::AccountId", ":log-group:/aws/lambda/*"]]
         - Effect: Allow
           Action:
           - iam:PassRole
           Resource: !GetAtt SolutionHelperRole.Arn
       Roles:
       - !Ref SolutionHelperRole
-      
+
   UUIDGenerator:
     Type: "Custom::UUIDGenerator"
     Properties:
       ServiceToken: !GetAtt SolutionHelperFunction.Arn
       Region: !Ref AWS::Region
       DependsOn: SolutionHelperFunction
-      
+
 
   # External Resources [end]
 

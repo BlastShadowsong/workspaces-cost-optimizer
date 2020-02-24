@@ -1,17 +1,19 @@
-#!/usr/bin/python 
-# -*- coding: utf-8 -*- 
-######################################################################################################################
-#  Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           #
-#                                                                                                                    #
-#  Licensed under the Apache License, Version 2.0 (the "License"). You may not use this file except in compliance    #
-#  with the License. A copy of the License is located at                                                             #
-#                                                                                                                    #
-#      http://www.apache.org/licenses/LICENSE-2.0                                                                    #
-#                                                                                                                    #
-#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES #
-#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    #
-#  and limitations under the License.                                                                                #
-######################################################################################################################
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+##############################################################################
+# Copyright 2019 Amazon.com, Inc. and its affiliates. All Rights Reserved.
+#                                                                            #
+#  Licensed under the Amazon Software License (the "License"). You may not   #
+#  use this file except in compliance with the License. A copy of the        #
+#  License is located at                                                     #
+#                                                                            #
+#      http://aws.amazon.com/asl/                                            #
+#                                                                            #
+#  or in the "license" file accompanying this file. This file is distributed #
+#  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,        #
+#  express or implied. See the License for the specific language governing   #
+#  permissions and limitations under the License.                            #
+##############################################################################
 
 # wco.py
 # This is the main program that reads the CloudFormationTempate (CFT) and scans for workspace directories
@@ -51,7 +53,7 @@ directoryCount = 0;
 # or as online params (docker) shell vars when testing
 
 stackParams = {}
-for param in {'LogLevel', 
+for param in {'LogLevel',
               'DryRun',
               'TestEndOfMonth',
               'SendAnonymousData',
@@ -92,55 +94,57 @@ else:
     log.info('It is NOT the last day of the month, last day is %s and today is %s', lastDay, theDay)
 
 # Get all regions that run Workspaces
-for i in range(0, maxRetries):
-    log.debug('Try #%s to get_regions for WorkSpaces', i+1)
-    try:
-        wsRegions = boto3.session.Session().get_available_regions('workspaces')
-        break
-    except botocore.exceptions.ClientError as e:
-        log.error(e)
-        if i >= maxRetries - 1: log.error('Error processing get_regions for WorkSpaces: ExceededMaxRetries')
-        else: time.sleep(i/10)
+# for i in range(0, maxRetries):
+#     log.debug('Try #%s to get_regions for WorkSpaces', i+1)
+#     try:
+#         # wsRegions = boto3.session.Session().get_available_regions('workspaces')
+#         wsRegions = ('cn-northwest-1',)
+#         break
+#     except botocore.exceptions.ClientError as e:
+#         log.error(e)
+#         if i >= maxRetries - 1: log.error('Error processing get_regions for WorkSpaces: ExceededMaxRetries')
+#         else: time.sleep(i/10)
 
 # For each region
 totalWorkspaces = 0
-for wsRegion in wsRegions:
-    regionCount += 1
+wsRegion = 'cn-northwest-1'
+# for wsRegion in wsRegions:
+regionCount = 1
 
-    # Create a WS Client
-    wsClient = boto3.client('workspaces', region_name=wsRegion)
+# Create a WS Client
+wsClient = boto3.client('workspaces', region_name=wsRegion)
 
-    log.info('>>>> Scanning Workspace Directories for Region %s', wsRegion)
+log.info('>>>> Scanning Workspace Directories for Region %s', wsRegion)
 
-    for i in range(0, maxRetries):
-        log.debug('Try #%s to get list of directories', i+1)
+for i in range(0, maxRetries):
+    log.debug('Try #%s to get list of directories', i+1)
 
-        # Get the directories within the region
-        try:
-            directories = wsClient.describe_workspace_directories()
-            break
-        except botocore.exceptions.ClientError as e:
-            log.error(e)
-            if i >= maxRetries - 1: log.error('describe_workspace_directories ExceededMaxRetries')
-            else: time.sleep(i/10)
+    # Get the directories within the region
+    try:
+        directories = wsClient.describe_workspace_directories()
+        break
+    except botocore.exceptions.ClientError as e:
+        log.error(e)
+        if i >= maxRetries - 1: log.error('describe_workspace_directories ExceededMaxRetries')
+        else: time.sleep(i/10)
 
-    # For each directory
-    for directory in directories["Directories"]:
-        directoryCount += 1
+# For each directory
+for directory in directories["Directories"]:
+    directoryCount += 1
 
-        directoryParams = {
-            "DirectoryId": directory["DirectoryId"],
-            "Region": wsRegion,
-            "EndTime": endTime,
-            "StartTime": startTime,
-            "LastDay": str(lastDay),
-            "RunUUID": runUUID,
-            "AnonymousDataEndpoint": anonymousDataEndpoint
-        }
+    directoryParams = {
+        "DirectoryId": directory["DirectoryId"],
+        "Region": wsRegion,
+        "EndTime": endTime,
+        "StartTime": startTime,
+        "LastDay": str(lastDay),
+        "RunUUID": runUUID,
+        "AnonymousDataEndpoint": anonymousDataEndpoint
+    }
 
-        log.info('Calling directory reader')
-        directoryReader = DirectoryReader()
-        countWorkspaces = directoryReader.read_directory(wsRegion, stackParams, directoryParams)
-        totalWorkspaces = totalWorkspaces + countWorkspaces
+    log.info('Calling directory reader')
+    directoryReader = DirectoryReader()
+    countWorkspaces = directoryReader.read_directory(wsRegion, stackParams, directoryParams)
+    totalWorkspaces = totalWorkspaces + countWorkspaces
 
 log.info('Successfully invoked directory_reader for %d workspaces in %d directories across %d regions.', totalWorkspaces, directoryCount, regionCount)
